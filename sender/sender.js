@@ -1,107 +1,168 @@
 const webSocket = new WebSocket("ws://127.0.0.1:3000")
 
 webSocket.onmessage = (event) => {
-    handleSignallingData(JSON.parse(event.data))
+  handleSignallingData(JSON.parse(event.data))
 }
 
 function handleSignallingData(data) {
-    switch (data.type) {
-        case "answer":
-            peerConn.setRemoteDescription(data.answer)
-            break
-        case "candidate":
-            peerConn.addIceCandidate(data.candidate)
-    }
+  switch (data.type) {
+    case "answer":
+      peerConn.setRemoteDescription(data.answer)
+      break
+    case "candidate":
+      peerConn.addIceCandidate(data.candidate)
+  }
 }
 
 let username
+
 function sendUsername() {
 
-    username = document.getElementById("username-input").value
-    sendData({
-        type: "store_user"
-    })
+  username = document.getElementById("username-input").value
+  sendData({
+    type: "store_user"
+  })
 }
 
 function sendData(data) {
-    data.username = username
-    webSocket.send(JSON.stringify(data))
+  data.username = username
+  webSocket.send(JSON.stringify(data))
 }
 
 
 let localStream
 let peerConn
+
 function startCall() {
-    document.getElementById("video-call-div")
+  document.getElementById("video-call-div")
     .style.display = "inline"
 
-    navigator.getUserMedia({
-        video: {
-            frameRate: 24,
-            width: {
-                min: 480, ideal: 720, max: 1280
-            },
-            aspectRatio: 1.33333
-        },
-        audio: true
-    }, (stream) => {
-        localStream = stream
-        document.getElementById("local-video").srcObject = localStream
+  navigator.getUserMedia({
+    video: {
+      frameRate: 24,
+      width: {
+        min: 480,
+        ideal: 720,
+        max: 1280
+      },
+      aspectRatio: 1.33333
+    },
+    audio: true
+  }, (stream) => {
+    localStream = stream
+    document.getElementById("local-video").srcObject = localStream
 
-        let configuration = {
-            iceServers: [
-                {
-                    "urls": ["stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302"]
-                }
-            ]
-        }
+    let configuration = {
+      iceServers: [{
+        "urls": ["stun:stun.l.google.com:19302",
+          "stun:stun1.l.google.com:19302",
+          "stun:stun2.l.google.com:19302"
+        ]
+      }]
+    }
 
-        peerConn = new RTCPeerConnection(configuration)
-        peerConn.addStream(localStream)
+    peerConn = new RTCPeerConnection(configuration)
+    peerConn.addStream(localStream)
 
-        peerConn.onaddstream = (e) => {
-            document.getElementById("remote-video")
-            .srcObject = e.stream
-        }
+    peerConn.onaddstream = (e) => {
+      document.getElementById("remote-video")
+        .srcObject = e.stream
+    }
 
-        peerConn.onicecandidate = ((e) => {
-            if (e.candidate == null)
-                return
-            sendData({
-                type: "store_candidate",
-                candidate: e.candidate
-            })
-        })
+    peerConn.onicecandidate = ((e) => {
+      if (e.candidate == null)
+        return
+      sendData({
+        type: "store_candidate",
+        candidate: e.candidate
+      })
+    })
 
-        createAndSendOffer()
+    createAndSendOffer()
     }, (error) => {
-        console.log(error)
+      console.log(error)
     })
 }
 
 function createAndSendOffer() {
-    peerConn.createOffer((offer) => {
-        sendData({
-            type: "store_offer",
-            offer: offer
-        })
-
-        peerConn.setLocalDescription(offer)
-    }, (error) => {
-        console.log(error)
+  peerConn.createOffer((offer) => {
+    sendData({
+      type: "store_offer",
+      offer: offer
     })
+
+    peerConn.setLocalDescription(offer)
+  }, (error) => {
+    console.log(error)
+  })
 }
 
 let isAudio = true
+
 function muteAudio() {
-    isAudio = !isAudio
-    localStream.getAudioTracks()[0].enabled = isAudio
+  isAudio = !isAudio
+  localStream.getAudioTracks()[0].enabled = isAudio
 }
 
 let isVideo = true
+
 function muteVideo() {
-    isVideo = !isVideo
-    localStream.getVideoTracks()[0].enabled = isVideo
+  isVideo = !isVideo
+  localStream.getVideoTracks()[0].enabled = isVideo
+}
+
+var _screenTrack = null;
+
+var _screenStream
+async function ScreenShare() {
+console.log("Screen Sharing...")
+if (_screenTrack) {
+  _screenTrack.stop();
+  _screenTrack = null;
+  document.getElementById('screenshare-video').srcObject = null;
+  $(this).text("Screen Share");
+  return;
+}
+try {
+  var sc_stream = await navigator.mediaDevices.getDisplayMedia({
+    audio: false,
+    video: {
+      frameRate: 1,
+    },
+    // (stream) => {
+    //   localStream = stream
+    //   document.getElementById("local-video").srcObject = localStream
+  });
+  console.log("hey...")
+  if (sc_stream && sc_stream.getVideoTracks().length > 0) {
+    _screenTrack = sc_stream.getVideoTracks()[0];
+    document.getElementById('screenshare-video').srcObject = new MediaStream([_screenTrack]);
+    document.getElementById('screenSharebutton').text("Stop Share");
+    _screenStream = _screenTrack;
+    peerConn.addStream(sc_stream)
+  }
+} catch (e) {
+  console.log(e);
+  return;
+}
+
+peerConn.onaddstream = (e) => {
+  console.log("onaddstream")
+  console.log(e.stream)
+  document.getElementById("screenshare-remotevideo")
+  .srcObject = e.stream
+}
+
+
+// peerConn.onicecandidate = ((e) => {
+//   if (e.candidate == null)
+//     return
+//   sendData({
+//     type: "store_candidate",
+//     candidate: e.candidate
+//   })
+// })
+
+createAndSendOffer()
+
 }

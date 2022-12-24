@@ -17,6 +17,26 @@
   background: #ffffff;
 }
 
+#screenshare-video {
+  position: absolute;
+  top: 0;
+  left:160px;
+  margin: 16px;
+  max-width: 20%;
+  max-height: 20%;
+  background: #ffffff;
+}
+
+#screenshare-remotevideo {
+  position: absolute;
+  top: 0;
+  left:300px;
+  margin: 16px;
+  max-width: 20%;
+  max-height: 20%;
+  background: #ffffff;
+}
+
 #remote-video{
   background: #000000;
   width: 100%;

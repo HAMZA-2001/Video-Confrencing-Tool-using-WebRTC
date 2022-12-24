@@ -105,3 +105,60 @@ function muteVideo() {
     isVideo = !isVideo
     localStream.getVideoTracks()[0].enabled = isVideo
 }
+
+
+var _screenTrack = null;
+async function ScreenShare() {
+  console.log("Screen Sharing...")
+  if (_screenTrack) {
+    _screenTrack.stop();
+    _screenTrack = null;
+    document.getElementById('screenshare-video').srcObject = null;
+    $(this).text("Screen Share");
+    return;
+  }
+  try {
+    var sc_stream = await navigator.mediaDevices.getDisplayMedia({
+      audio: false,
+      video: {
+        frameRate: 1,
+      },
+      // (stream) => {
+      //   localStream = stream
+      //   document.getElementById("local-video").srcObject = localStream
+    });
+    console.log("hey...")
+    if (sc_stream && sc_stream.getVideoTracks().length > 0) {
+      _screenTrack = sc_stream.getVideoTracks()[0];
+      document.getElementById('screenshare-video').srcObject = new MediaStream([_screenTrack]);
+      document.getElementById('screenSharebutton').text("Stop Share");
+        peerConn.addStream(sc_stream)
+    }
+    _screenStream = sc_stream;
+
+
+  } catch (e) {
+    console.log(e);
+    return;
+  }
+
+  peerConn.onaddstream = (e) => {
+      console.log(e.stream)
+      document.getElementById("screenshare-remotevideo")
+      .srcObject = e.stream
+  }
+
+  // peerConn.onicecandidate = ((e) => {
+  //     if (e.candidate == null)
+  //         return
+  //
+  //     sendData({
+  //         type: "send_candidate",
+  //         candidate: e.candidate
+  //     })
+  // })
+  //
+  // sendData({
+  //     type: "join_call"
+  // })
+}

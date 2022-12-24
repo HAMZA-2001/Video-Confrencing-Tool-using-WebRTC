@@ -16,9 +16,15 @@
   <div id="video-call-div">
     <video muted id="local-video" autoplay></video>
     <video muted id="remote-video" autoplay></video>
+    <video muted id="screenshare-video" autoplay></video>
+    <video muted id="screenshare-remotevideo" autoplay></video>
+
+  </video>
     <div class="video-call-div">
       <button onclick="muteVideo()">Mute Video</button>
       <button onclick="MuteAudio()">Mute Audio</button>
+      <button onclick="ScreenShare()" id="screenSharebutton">Screen Share</button>
+      <button onclick="MuteAudio()">Add Screen</button>
     </div>
   </div>
   <script src="./sender.js"></script>
